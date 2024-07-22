@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "appInsights1": {
+      "type": "appInsights"
+    },
+    "storage1": {
+      "type": "storage",
+      "connectionId": "AzureWebJobsStorage"
+    },
+    "storage2": {
+      "type": "storage",
+      "connectionId": "IncomingBlobConnStr",
+      "dynamicId": null
+    }
+  }
+}
