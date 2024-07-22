@@ -1,14 +1,21 @@
 # Project
 
-> This repo has been populated by an initial template to help get you started. Please
-> make sure to update the content to build a great experience for community-building.
+This project provides a sample/template to accelerate the development of an agentic generative chat application, illustrating the pattern of orchestrating multiple agents automatically to meet a user's request after identifying the user and agent required.  
 
-As the maintainer of this project, please make a few updates:
+# Getting Started - run and debug locally
 
-- Improving this README.MD file to provide a great experience
-- Updating SUPPORT.MD with content about this project's support experience
-- Understanding the security reporting process in SECURITY.MD
-- Remove this section from the README
+## Pre-requisites
+To run and debug/develop on this code locally, you need the following deployed and available resources in Azure, which you can reach from your development environment:
+
+* Azure OpenAI
+	* Chat model (gpt-4o recommended)
+	* Embedding model
+* AI Search Service
+* Storage Account
+
+1. Clone this repo
+1. Open in Visual Studio or VSCode
+1. Set your user secrets to include at minimum the below required resources in 
 
 ## Contributing
 
