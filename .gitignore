@@ -398,3 +398,4 @@ FodyWeavers.xsd
 *.sln.iml
 
 *.bkp
+src/ChatApp/ChatApp.Server/.env
