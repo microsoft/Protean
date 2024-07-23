@@ -155,8 +155,8 @@ module backend 'app/backend.bicep' = {
   scope: resourceGroup
   params: {
     location: location
-    tags: union(tags, { 'azd-service-name': 'backend' })
-    appServicePlanName: !empty(appServicePlanName) ? appServicePlanName : '${abbrs.webServerFarms}${resourceToken}'
+    tags: tags
+    appServicePlanName: !empty(appServicePlanName) ? appServicePlanName : '${abbrs.webServerFarms}backend-${resourceToken}'
     appServiceName: appServiceName
     storageAccountName: storage.outputs.name
     authClientSecret: authClientSecret
@@ -164,41 +164,42 @@ module backend 'app/backend.bicep' = {
     authIssuerUri: authIssuerUri
     appSettings: {
       // frontend settings
-      'FrontendSettings:auth_enabled': 'false'
-      'FrontendSettings:feedback_enabled': 'false'
-      'FrontendSettings:ui:title': 'Damu'
-      'FrontendSettings:ui:chat_description': 'This chatbot is configured to answer your questions.'
-      'FrontendSettings:ui:show_share_button': true
-      'FrontendSettings:sanitize_answer': false
-      'FrontendSettings:history_enabled': isHistoryEnabled
+      FrontendSettings__auth_enabled: 'false'
+      FrontendSettings__feedback_enabled: 'false'
+      FrontendSettings__ui__title: 'Damu'
+      FrontendSettings__ui__chat_description: 'This chatbot is configured to answer your questions.'
+      FrontendSettings__ui__show_share_button: true
+      FrontendSettings__sanitize_answer: false
+      FrontendSettings__history_enabled: isHistoryEnabled
       // search
-      'AISearchOptions:Endpoint': searchService.outputs.endpoint
-      'AISearchOptions:ApiKey': ''
-      'AISearchOptions:IndexName': searchIndexName
-      'AISearchOptions:SemanticConfigurationName': searchSemanticSearchConfig
+      AISearchOptions__Endpoint: searchService.outputs.endpoint
+      AISearchOptions__ApiKey: ''
+      AISearchOptions__IndexName: searchIndexName
+      AISearchOptions__SemanticConfigurationName: searchSemanticSearchConfig
       // openai
-      'OpenAIOptions:Endpoint': openAi.outputs.endpoint
-      'OpenAIOptions:ApiKey': ''
-      'OpenAIOptions:ChatDeployment': chatDeploymentName
-      'OpenAIOptions:EmbeddingDeployment': embeddingDeploymentName
+      OpenAIOptions__Endpoint: openAi.outputs.endpoint
+      OpenAIOptions__ApiKey: ''
+      OpenAIOptions__ChatDeployment: chatDeploymentName
+      OpenAIOptions__EmbeddingDeployment: embeddingDeploymentName
       // storage
-      'StorageOptions:BlobStorageEndpoint': storage.outputs.primaryEndpoints.blob
-      'StorageOptions:BlobStorageConnectionString': ''
-      'StorageOptions:BlobStorageContainerName': storageContainerName      
+      StorageOptions__BlobStorageEndpoint: storage.outputs.primaryEndpoints.blob
+      StorageOptions__BlobStorageConnectionString: ''
+      StorageOptions__BlobStorageContainerName: storageContainerName
     }
   }
 }
 
 // Index Orchestrator
+var functionAppServiceName = !empty(functionServiceName) ? functionServiceName : '${abbrs.webSitesFunctions}function-${resourceToken}'
 module function './app/function.bicep' = {
   name: 'function'
   scope: resourceGroup
   params: {
-    name: !empty(functionServiceName) ? functionServiceName : '${abbrs.webSitesFunctions}function-${resourceToken}'
+    name: functionAppServiceName
     location: location
     tags: tags
     applicationInsightsName: monitoring.outputs.applicationInsightsName
-    appServicePlanName: !empty(functionAppServicePlanName) ? functionAppServicePlanName : '${abbrs.webServerFarms}${resourceToken}'
+    appServicePlanName: !empty(functionAppServicePlanName) ? functionAppServicePlanName : '${abbrs.webServerFarms}function-${resourceToken}'
     storageAccountName: storage.outputs.name
     useManagedIdentity: true
     appSettings: {
@@ -207,7 +208,6 @@ module function './app/function.bicep' = {
       AzureOpenAiEndpoint: openAi.outputs.endpoint
       DocIntelEndPoint: formRecognizer.outputs.endpoint
       FUNCTIONS_WORKER_RUNTIME: 'dotnet-isolated'
-      IncomingBlobConnStr: ''
       ModelDimensions: embeddingVectorDimension
       ProjectPrefix: environmentName
       SearchEndpoint: searchService.outputs.endpoint
