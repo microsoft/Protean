@@ -5,6 +5,7 @@ using Azure.AI.OpenAI;
 using Azure.Identity;
 using Azure.Search.Documents;
 using Azure.Search.Documents.Indexes;
+using Azure.Storage.Blobs;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,7 +18,7 @@ var host = new HostBuilder()
     .ConfigureAppConfiguration(builder =>
     {
         builder.AddJsonFile("appsettings.json");
-        builder.AddJsonFile("appsettings.Development.json", optional: true);
+        builder.AddUserSecrets<Program>(true);
     })
     .ConfigureServices(services =>
     {
@@ -39,9 +40,9 @@ var host = new HostBuilder()
             config.BindSection("KernelMemory", memoryConfiguration);
             config.BindSection("KernelMemory:Services:AzureOpenAIText", azureOpenAITextConfig);
             config.BindSection("KernelMemory:Services:AzureOpenAIEmbedding", azureOpenAIEmbeddingConfig);
-            config.BindSection("KernelMemory:Services:AzureAIDocIntel", azDocIntelConfig);
+            //config.BindSection("KernelMemory:Services:AzureAIDocIntel", azDocIntelConfig);
             config.BindSection("KernelMemory:Services:AzureAISearch", azureAISearchConfig);
-            config.BindSection("KernelMemory:Services:AzureBlobs", azureBlobConfig);
+            //config.BindSection("KernelMemory:Services:AzureBlobs", azureBlobConfig);
             config.BindSection("KernelMemory:Retrieval:SearchClient", searchClientConfig);
 
             var kmBuilder = new KernelMemoryBuilder()
@@ -52,12 +53,18 @@ var host = new HostBuilder()
                 }))
                 .AddSingleton(memoryConfiguration)
                 .WithAzureAISearchMemoryDb(azureAISearchConfig)              // Store memories in Azure AI Search
-                .WithAzureBlobsDocumentStorage(azureBlobConfig)              // Store files in Azure Blobs
+                                                                             //.WithAzureBlobsDocumentStorage(azureBlobConfig)              // Store files in Azure Blobs
                 .WithAzureOpenAITextGeneration(azureOpenAITextConfig)
                 .WithAzureOpenAITextEmbeddingGeneration(azureOpenAIEmbeddingConfig);
 
             return kmBuilder.Build<MemoryServerless>();
-        });        
+        });
+        services.AddSingleton(services =>
+        {
+            var settings = services.GetRequiredService<FunctionSettings>();
+            var client = new BlobServiceClient(settings.BlobStorageConnStr);
+            return client.GetBlobContainerClient("docs");
+        });
     })
     .Build();
 

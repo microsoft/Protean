@@ -31,20 +31,15 @@ public class UpsertIndexDocuments
     // todo: is there a way to more dynamically get the path or need it be 'hardcoded'?
     // , Source = BlobTriggerSource.LogsAndContainerScan
     [Function(nameof(UpsertIndexDocuments))]
-    public async Task RunAsync([BlobTrigger("docs/{blobName}", Connection = "AzureWebJobsStorage")] string blobItem)
+    public async Task RunAsync([BlobTrigger("docs/{blobName}", Connection = "IncomingBlobConnStr")] Stream blobContents, string blobName)
     {
-        _logger.LogInformation("Processing blob {blobName}...", blobItem);
-
-        var blobClient = _blobContainerClient.GetBlobClient(blobItem);
-
-        var blobBytes = new MemoryStream();
-        await blobClient.DownloadToAsync(blobBytes);
+        _logger.LogInformation("Processing blob {blobName}...", blobName);
 
         // use regex to create a docId from the blobName. only include the filename without file extension
-        var docId = blobItem.Split('.')[^2].Split('/')[^1];
+        var docId = blobName.Split('.')[^2].Split('/')[^1];
 
         // test this to see if it handles upsert
-        await _kernelMemory.ImportDocumentAsync(blobBytes, blobClient.Name, docId);
+        await _kernelMemory.ImportDocumentAsync(blobContents, blobName, docId);
     }
 
     private async Task DeleteOldChunksAsync(string nodeId)
