@@ -16,7 +16,7 @@ public class ChatCompletionService
     private readonly OpenAIPromptExecutionSettings _promptSettings;
     private readonly string _promptDirectory;
 
-    public ChatCompletionService(IOptions<OpenAIOptions> options, IOptions<AzureAdOptions> adOptions, AzureSearchService searchService)
+    public ChatCompletionService(IOptions<OpenAIOptions> options, IOptions<AzureAdOptions> adOptions)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(options?.Value?.Endpoint);
         ArgumentException.ThrowIfNullOrWhiteSpace(options?.Value?.ChatDeployment);

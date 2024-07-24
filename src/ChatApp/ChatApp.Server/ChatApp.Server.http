@@ -13,5 +13,5 @@ Content-Type: application/json
 
 ###
 
-POST https://localhost:7159/search?query="hello%20world"
+POST https://localhost:7159/search?query="amazon%20order%20rejected"
 Content-Type: application

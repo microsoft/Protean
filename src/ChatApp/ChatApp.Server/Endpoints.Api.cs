@@ -3,6 +3,7 @@ using ChatApp.Server.Models;
 using ChatApp.Server.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Microsoft.KernelMemory;
 using Microsoft.SemanticKernel.ChatCompletion;
 using System.Text.Json;
 
@@ -17,14 +18,7 @@ public static partial class Endpoints
             .WithOpenApi();
 
         app.MapPost("/conversation", PostConversationAsync);
-        app.MapPost("/search", PostSearchAsync);
-
-        app.MapGet("notes/{id}", async (long id, [FromServices] NoteService noteService) =>
-        {
-            var note = await noteService.GetNoteAsync(id);
-
-            return note is null ? Results.NotFound() : Results.Ok(note);
-        });
+        app.MapPost("/search", PostSearchAsync);        
 
         return app;
     }     
@@ -54,10 +48,10 @@ public static partial class Endpoints
     }
 
     private static async Task<IResult> PostSearchAsync(
-        [FromServices] AzureSearchService search,
+        [FromServices] IKernelMemory search,
         [FromQuery] string query)
     {
-        var searchResults = await search.QueryDocumentsAsync(query);
+        var searchResults = await search.SearchAsync(query);
         return Results.Ok(searchResults);
     }
 
