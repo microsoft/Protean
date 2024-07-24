@@ -1,11 +1,4 @@
 using Api.Models;
-using Azure;
-using Azure.AI.DocumentIntelligence;
-using Azure.AI.OpenAI;
-using Azure.Identity;
-using Azure.Search.Documents;
-using Azure.Search.Documents.Indexes;
-using Azure.Storage.Blobs;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
