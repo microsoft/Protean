@@ -67,7 +67,7 @@ public class ChatCompletionService
 
         _promptDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Plugins");
 
-        builder.Plugins.AddFromPromptDirectory(_promptDirectory);
+        //builder.Plugins.AddFromPromptDirectory(_promptDirectory);
 
         _kernel = builder.Build();
     }
@@ -87,39 +87,26 @@ public class ChatCompletionService
 
     public async Task<ChatCompletion> CompleteChat(Message[] messages)
     {
-        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        string documentContents = string.Empty;
-        if (messages.Any(m => m.Role.Equals(AuthorRole.Tool.ToString(), StringComparison.OrdinalIgnoreCase)))
-        {
-            // parse out the document contents
-            var toolContent = JsonSerializer.Deserialize<ToolContentResponse>(
-                messages.First(m => m.Role.Equals(AuthorRole.Tool.ToString(), StringComparison.OrdinalIgnoreCase)).Content, options);
-            documentContents = string.Join("\r", toolContent.Citations.Select(c => $"{c.Title}:{c.Content}:{c.AdditionalContent}"));
-        }
-        else
-        {
-            documentContents = "no source available.";
-        }
+        //var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        //string documentContents = string.Empty;
+        //if (messages.Any(m => m.Role.Equals(AuthorRole.Tool.ToString(), StringComparison.OrdinalIgnoreCase)))
+        //{
+        //    // parse out the document contents
+        //    var toolContent = JsonSerializer.Deserialize<ToolContentResponse>(
+        //        messages.First(m => m.Role.Equals(AuthorRole.Tool.ToString(), StringComparison.OrdinalIgnoreCase)).Content, options);
+        //    documentContents = string.Join("\r", toolContent.Citations.Select(c => $"{c.Title}:{c.Content}:{c.AdditionalContent}"));
+        //}
+        //else
+        //{
+        //    documentContents = "no source available.";
+        //}
 
         var sysmessage = $$$"""
-                ## Notes ##
-                {{{documentContents}}}
-                ## End Notes ##
-                You are an agent helping to analyze the provided medical notes about patient interactions, and supplement with additional data using plugin functions available to you. 
-                Respond with a count of notes used to the question and the list of note data in a table formatted like the sample answer.
-                Include data in the table asked for by the user, only if you can explicitly find it in the note or data retrieved using plugin functions available. 
-                If you do not have data available to meet the user's request, include only what you have, with "not found" listed for missing data. Never make up data.
-                If the data set is large, display max 10 indicating it is just a sample. 
-                Include source citations, which must be in the format [doc1], [doc2], etc.
-                Sample Answer:
-                (2) notes found:\n
-                Patient Name	|	MRN	    | Citation |\n
-                John Johnson 	|	1234567 | [doc1]   |\n
-                Peter Peterson	| 	7654321 | [doc2]   |
+                You are an a helpful agent answering questions based on information available to you, general information and functions.
                 """;
         var history = new ChatHistory(sysmessage);
 
-        // filter out 'tool' messages
+        //filter out 'tool' messages and add rest to history
         messages.Where(m => !m.Role.Equals(AuthorRole.Tool.ToString(), StringComparison.OrdinalIgnoreCase))
             .ToList()
             .ForEach(m => history.AddUserMessage(m.Content));
