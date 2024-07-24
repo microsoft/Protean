@@ -1,4 +1,6 @@
-﻿namespace Api.Models;
+﻿#pragma warning disable CS8601 // Possible null reference assignment.
+
+namespace Api.Models;
 
 public class FunctionSettings
 {
@@ -21,7 +23,6 @@ public class FunctionSettings
         VectorSearchProfileName = $"{prefix}-semantic-profile";
         VectorSearchVectorizer = $"{prefix}-search-vectorizer";
 
-#pragma warning disable CS8601 // Possible null reference assignment.
         // VS doesn't understand that the exception means that there will never be a null reference here
         BlobStorageConnStr = string.IsNullOrWhiteSpace(envVars["IncomingBlobConnStr"]?.ToString()) ? throw new NullReferenceException("IncomingBlobConnStr") : envVars["IncomingBlobConnStr"]?.ToString()!;
 
@@ -39,7 +40,6 @@ public class FunctionSettings
 
         if (!Uri.TryCreate(searchEndpoint, UriKind.Absolute, out SearchEndpoint))
             throw new ArgumentException($"SearchEndpoint {searchEndpoint} is not a valid URI.");
-#pragma warning restore CS8601 // Possible null reference assignment.
 
         ArgumentNullException.ThrowIfNull(envVars["ModelDimensions"]);
 
@@ -81,3 +81,5 @@ public class FunctionSettings
     public readonly string? AzureOpenAiKey = null;
     public readonly string? DocIntelKey = null;
 }
+
+#pragma warning restore CS8601 // Possible null reference assignment.

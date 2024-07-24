@@ -6,48 +6,58 @@ using Azure.Identity;
 using Azure.Search.Documents;
 using Azure.Search.Documents.Indexes;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.KernelMemory;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWebApplication()
+    .ConfigureAppConfiguration(builder =>
+    {
+        builder.AddJsonFile("appsettings.json");
+        builder.AddJsonFile("appsettings.Development.json", optional: true);
+    })
     .ConfigureServices(services =>
     {
         services.AddApplicationInsightsTelemetryWorkerService();
         services.ConfigureFunctionsApplicationInsights();
         services.AddSingleton<FunctionSettings>();
-        services.AddTransient(services =>
+        services.AddSingleton<IKernelMemory, MemoryServerless>(services =>
         {
-            var settings = services.GetRequiredService<FunctionSettings>();
+            var config = services.GetRequiredService<IConfiguration>();
 
-            return string.IsNullOrWhiteSpace(settings.DocIntelKey)
-            ? new DocumentIntelligenceClient(settings.DocIntelEndPoint, new DefaultAzureCredential())
-            : new DocumentIntelligenceClient(settings.DocIntelEndPoint, new AzureKeyCredential(settings.DocIntelKey));
-        });
-        services.AddTransient(services =>
-        {
-            var settings = services.GetRequiredService<FunctionSettings>();
+            var memoryConfiguration = new KernelMemoryConfig();
+            var azureOpenAITextConfig = new AzureOpenAIConfig();
+            var azureOpenAIEmbeddingConfig = new AzureOpenAIConfig();
+            var searchClientConfig = new SearchClientConfig();
+            var azDocIntelConfig = new AzureAIDocIntelConfig();
+            var azureAISearchConfig = new AzureAISearchConfig();
+            var azureBlobConfig = new AzureBlobsConfig();
 
-            return string.IsNullOrWhiteSpace(settings.AzureOpenAiKey)
-            ? new OpenAIClient(settings.AzureOpenAiEndpoint, new DefaultAzureCredential())
-            : new OpenAIClient(settings.AzureOpenAiEndpoint, new AzureKeyCredential(settings.AzureOpenAiKey));
-        });
-        services.AddTransient(services =>
-        {
-            var settings = services.GetRequiredService<FunctionSettings>();
+            config.BindSection("KernelMemory", memoryConfiguration);
+            config.BindSection("KernelMemory:Services:AzureOpenAIText", azureOpenAITextConfig);
+            config.BindSection("KernelMemory:Services:AzureOpenAIEmbedding", azureOpenAIEmbeddingConfig);
+            config.BindSection("KernelMemory:Services:AzureAIDocIntel", azDocIntelConfig);
+            config.BindSection("KernelMemory:Services:AzureAISearch", azureAISearchConfig);
+            config.BindSection("KernelMemory:Services:AzureBlobs", azureBlobConfig);
+            config.BindSection("KernelMemory:Retrieval:SearchClient", searchClientConfig);
 
-            return string.IsNullOrWhiteSpace(settings.SearchKey)
-            ? new SearchClient(settings.SearchEndpoint, settings.SearchIndexName, new DefaultAzureCredential())
-            : new SearchClient(settings.SearchEndpoint, settings.SearchIndexName, new AzureKeyCredential(settings.SearchKey));
-        });
-        services.AddTransient(services =>
-        {
-            var settings = services.GetRequiredService<FunctionSettings>();
+            var kmBuilder = new KernelMemoryBuilder()
+                .Configure(builder => builder.Services.AddLogging(l =>
+                {
+                    l.SetMinimumLevel(LogLevel.Trace);
+                    l.AddSimpleConsole(c => c.SingleLine = true);
+                }))
+                .AddSingleton(memoryConfiguration)
+                .WithAzureAISearchMemoryDb(azureAISearchConfig)              // Store memories in Azure AI Search
+                .WithAzureBlobsDocumentStorage(azureBlobConfig)              // Store files in Azure Blobs
+                .WithAzureOpenAITextGeneration(azureOpenAITextConfig)
+                .WithAzureOpenAITextEmbeddingGeneration(azureOpenAIEmbeddingConfig);
 
-            return string.IsNullOrWhiteSpace(settings.SearchKey)
-            ? new SearchIndexClient(settings.SearchEndpoint, new DefaultAzureCredential())
-            : new SearchIndexClient(settings.SearchEndpoint, new AzureKeyCredential(settings.SearchKey));
-        });
+            return kmBuilder.Build<MemoryServerless>();
+        });        
     })
     .Build();
 
