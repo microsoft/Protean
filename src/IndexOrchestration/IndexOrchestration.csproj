@@ -23,6 +23,9 @@
 		<PackageReference Include="Microsoft.Azure.Functions.Worker.ApplicationInsights" Version="1.2.0" />
 		<PackageReference Include="Microsoft.Extensions.Azure" Version="1.7.4" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="8.0.0" />
+		<PackageReference Include="Microsoft.KernelMemory.AI.AzureOpenAI" Version="0.68.240722.1" />
+		<PackageReference Include="Microsoft.KernelMemory.Core" Version="0.68.240722.1" />
+		<PackageReference Include="Microsoft.KernelMemory.MemoryDb.AzureAISearch" Version="0.68.240722.1" />
 		<PackageReference Include="Microsoft.SemanticKernel" Version="1.15.1" />
 		<PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.15.1" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
@@ -31,6 +34,9 @@
 		<PackageReference Include="Tiktoken" Version="2.0.2" />
 	</ItemGroup>
 	<ItemGroup>
+		<None Update="appsettings.json">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
 		<None Update="host.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
