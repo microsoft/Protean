@@ -12,20 +12,17 @@ public class UpsertIndexDocuments
     private readonly FunctionSettings _functionSettings;
     private readonly ILogger<UpsertIndexDocuments> _logger;
     private readonly IKernelMemory _kernelMemory;
-    private readonly BlobContainerClient _blobContainerClient;
 
     // todo: move to orchestration function pattern to handle larger throughput
     // todo: add in upsert for individual notes
     public UpsertIndexDocuments(
         FunctionSettings functionSettings, 
         ILogger<UpsertIndexDocuments> logger, 
-        IKernelMemory kernelMemory,
-        BlobContainerClient blobContainerClient)
+        IKernelMemory kernelMemory)
     {        
         _functionSettings = functionSettings;
         _logger = logger;
-        _kernelMemory = kernelMemory;
-        _blobContainerClient = blobContainerClient;
+        _kernelMemory = kernelMemory;        
     }
 
     // todo: is there a way to more dynamically get the path or need it be 'hardcoded'?
@@ -36,7 +33,9 @@ public class UpsertIndexDocuments
         _logger.LogInformation("Processing blob {blobName}...", blobName);
 
         // use regex to create a docId from the blobName. only include the filename without file extension
-        var docId = blobName.Split('.')[^2].Split('/')[^1];
+        // return all but last item of array
+
+        var docId = string.Join('.', blobName.Split('/')[^1].Split('.')[..^1]);
 
         // test this to see if it handles upsert
         await _kernelMemory.ImportDocumentAsync(blobContents, blobName, docId);

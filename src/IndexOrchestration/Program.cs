@@ -58,13 +58,7 @@ var host = new HostBuilder()
                 .WithAzureOpenAITextEmbeddingGeneration(azureOpenAIEmbeddingConfig);
 
             return kmBuilder.Build<MemoryServerless>();
-        });
-        services.AddSingleton(services =>
-        {
-            var settings = services.GetRequiredService<FunctionSettings>();
-            var client = new BlobServiceClient(settings.BlobStorageConnStr);
-            return client.GetBlobContainerClient("docs");
-        });
+        });        
     })
     .Build();
 
