@@ -15,19 +15,16 @@ internal static class ChatAppExtensions
     // this should happen before AddChatServices...
     internal static void AddOptions(this IServiceCollection services, IConfiguration config)
     {
-        services.Configure<CosmosOptions>(config.GetSection(nameof(CosmosOptions)));
-        services.Configure<StorageOptions>(config.GetSection(nameof(StorageOptions)));
-
         // FrontendSettings class needs work on json serialization before this is useful...
-        services.Configure<FrontendSettings>(config.GetSection(nameof(FrontendSettings)));
+        services.AddOptions<FrontendSettings>().Bind(config.GetSection(nameof(FrontendSettings)));
 
-        services.AddOptions<KernelMemoryConfig>().BindConfiguration("KernelMemory");        
-        services.Configure<AzureAISearchConfig>(config.GetSection("KernelMemory:Services:AzureAISearch"));
-        services.Configure<SearchClientConfig>(config.GetSection("KernelMemory:Retrieval:SearchClient"));
+        services.AddOptions<KernelMemoryConfig>().BindConfiguration("KernelMemory");
+        services.AddOptions<AzureAISearchConfig>().BindConfiguration("KernelMemory:Services:AzureAISearch");
+        services.AddOptions<SearchClientConfig>().BindConfiguration("KernelMemory:Retrieval:SearchClient");
 
         // named options
-        services.Configure<AzureOpenAIConfig>("AzureOpenAIText", config.GetSection("KernelMemory:Services:AzureOpenAIText"));
-        services.Configure<AzureOpenAIConfig>("AzureOpenAIEmbedding", config.GetSection("KernelMemory:Services:AzureOpenAIEmbedding"));
+        services.AddOptions<AzureOpenAIConfig>("AzureOpenAIText").BindConfiguration("KernelMemory:Services:AzureOpenAIText");
+        services.AddOptions<AzureOpenAIConfig>("AzureOpenAIEmbedding").BindConfiguration("KernelMemory:Services:AzureOpenAIEmbedding");
     }
 
     internal static void AddChatAppServices(this IServiceCollection services, IConfiguration config)
@@ -60,12 +57,12 @@ internal static class ChatAppExtensions
         });
 
         services.AddSingleton<IKernelMemory>(services =>
-        {
+        {            
             KernelMemoryConfig memoryConfiguration = services.GetRequiredService<IOptions<KernelMemoryConfig>>().Value ?? 
                 throw new Exception("KernelMemory is required in settings.");
-            AzureOpenAIConfig azureOpenAITextConfig = services.GetRequiredService<IOptionsSnapshot<AzureOpenAIConfig>>().Get("AzureOpenAIText") ?? 
+            AzureOpenAIConfig azureOpenAITextConfig = services.GetRequiredService<IOptionsMonitor<AzureOpenAIConfig>>().Get("AzureOpenAIText") ?? 
                 throw new Exception("AzureOpenAIText is required in settings.");
-            AzureOpenAIConfig azureOpenAIEmbeddingConfig = services.GetRequiredService<IOptionsSnapshot<AzureOpenAIConfig>>().Get("AzureOpenAIEmbedding") ??
+            AzureOpenAIConfig azureOpenAIEmbeddingConfig = services.GetRequiredService<IOptionsMonitor<AzureOpenAIConfig>>().Get("AzureOpenAIEmbedding") ??
                 throw new Exception("AzureOpenAIEmbedding is required in settings.");
             SearchClientConfig searchClientConfig = services.GetRequiredService<IOptions<SearchClientConfig>>().Value ??
                 throw new Exception("SearchClientConfig is required in settings.");

@@ -15,11 +15,10 @@ public class ChatCompletionService
     private readonly OpenAIPromptExecutionSettings _promptSettings;
     private readonly string _promptDirectory;
 
-    public ChatCompletionService(IOptionsSnapshot<AzureOpenAIConfig> options, IConfiguration config, IKernelMemory kernelMemory)
+    public ChatCompletionService(IOptionsMonitor<AzureOpenAIConfig> options, IConfiguration config, IKernelMemory kernelMemory)
     {
         var textConfig = options.Get("AzureOpenAIText");
         var embeddingConfig = options.Get("AzureOpenAIEmbedding");
-
         _promptSettings = new OpenAIPromptExecutionSettings
         {
             MaxTokens = 1024,
