@@ -1,12 +1,11 @@
 ﻿#pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-using Azure;
 using Azure.Identity;
 using ChatApp.Server.Models;
 using Microsoft.Extensions.Options;
+using Microsoft.KernelMemory;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
-using System.Text.Json;
 
 namespace ChatApp.Server.Services;
 
@@ -16,11 +15,10 @@ public class ChatCompletionService
     private readonly OpenAIPromptExecutionSettings _promptSettings;
     private readonly string _promptDirectory;
 
-    public ChatCompletionService(IOptions<OpenAIOptions> options, IOptions<AzureAdOptions> adOptions)
+    public ChatCompletionService(IOptionsSnapshot<AzureOpenAIConfig> options, IConfiguration config, IKernelMemory kernelMemory)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(options?.Value?.Endpoint);
-        ArgumentException.ThrowIfNullOrWhiteSpace(options?.Value?.ChatDeployment);
-        ArgumentException.ThrowIfNullOrWhiteSpace(options?.Value?.EmbeddingDeployment);
+        var textConfig = options.Get("AzureOpenAIText");
+        var embeddingConfig = options.Get("AzureOpenAIEmbedding");
 
         _promptSettings = new OpenAIPromptExecutionSettings
         {
@@ -32,42 +30,43 @@ public class ChatCompletionService
 
         var builder = Kernel.CreateBuilder();
 
-        if (string.IsNullOrEmpty(options.Value.ApiKey)) // use managed identity
+        if (string.IsNullOrEmpty(textConfig.APIKey)) // use managed identity
         {
-            var defaultAzureCreds = string.IsNullOrWhiteSpace(adOptions?.Value?.TenantId)
+            var defaultAzureCreds = string.IsNullOrWhiteSpace(config["AZURE_TENANT_ID"])
                 ? new DefaultAzureCredential()
                 : new DefaultAzureCredential(
                     new DefaultAzureCredentialOptions
                     {
-                        TenantId = adOptions.Value.TenantId
+                        TenantId = config["AZURE_TENANT_ID"]
                     });
 
             builder = builder.AddAzureOpenAITextEmbeddingGeneration(
-            options.Value.EmbeddingDeployment,
-            options.Value.Endpoint,
-            defaultAzureCreds);
+                embeddingConfig.Deployment,
+                embeddingConfig.Endpoint,
+                defaultAzureCreds);
 
             builder = builder.AddAzureOpenAIChatCompletion(
-            options.Value.ChatDeployment,
-            options.Value.Endpoint,
-            defaultAzureCreds);
+                textConfig.Deployment,
+                textConfig.Endpoint,
+                defaultAzureCreds);
         }
         else // use api key
         {
-            builder = builder.AddAzureOpenAIChatCompletion(
-                options.Value.EmbeddingDeployment,
-                options.Value.Endpoint,
-                options.Value.ApiKey);
+            builder = builder.AddAzureOpenAITextEmbeddingGeneration(
+                embeddingConfig.Deployment,
+                embeddingConfig.Endpoint,
+                embeddingConfig.APIKey);
 
             builder = builder.AddAzureOpenAIChatCompletion(
-                options.Value.ChatDeployment,
-                options.Value.Endpoint,
-                options.Value.ApiKey);
+                textConfig.Deployment,
+                textConfig.Endpoint,
+                textConfig.APIKey);
         }
 
         _promptDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Plugins");
-
         //builder.Plugins.AddFromPromptDirectory(_promptDirectory);
+
+        builder.Plugins.AddFromObject(new MemoryPlugin(kernelMemory, waitForIngestionToComplete: true));
 
         _kernel = builder.Build();
     }

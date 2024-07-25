@@ -15,25 +15,29 @@ internal static class ChatAppExtensions
     // this should happen before AddChatServices...
     internal static void AddOptions(this IServiceCollection services, IConfiguration config)
     {
-        services.Configure<AzureAdOptions>(config.GetSection(nameof(AzureAdOptions)));
-        services.Configure<AISearchOptions>(config.GetSection(nameof(AISearchOptions)));
-        services.Configure<OpenAIOptions>(config.GetSection(nameof(OpenAIOptions)));
         services.Configure<CosmosOptions>(config.GetSection(nameof(CosmosOptions)));
         services.Configure<StorageOptions>(config.GetSection(nameof(StorageOptions)));
 
         // FrontendSettings class needs work on json serialization before this is useful...
         services.Configure<FrontendSettings>(config.GetSection(nameof(FrontendSettings)));
+
+        services.AddOptions<KernelMemoryConfig>().BindConfiguration("KernelMemory");        
+        services.Configure<AzureAISearchConfig>(config.GetSection("KernelMemory:Services:AzureAISearch"));
+        services.Configure<SearchClientConfig>(config.GetSection("KernelMemory:Retrieval:SearchClient"));
+
+        // named options
+        services.Configure<AzureOpenAIConfig>("AzureOpenAIText", config.GetSection("KernelMemory:Services:AzureOpenAIText"));
+        services.Configure<AzureOpenAIConfig>("AzureOpenAIEmbedding", config.GetSection("KernelMemory:Services:AzureOpenAIEmbedding"));
     }
 
     internal static void AddChatAppServices(this IServiceCollection services, IConfiguration config)
     {
-        var azureAdOptions = config.GetSection(nameof(AzureAdOptions)).Get<AzureAdOptions>();
         var frontendSettings = config.GetSection(nameof(FrontendSettings)).Get<FrontendSettings>();
 
         var defaultAzureCreds = string.IsNullOrEmpty(config["AZURE_TENANT_ID"]) ? new DefaultAzureCredential()
             : new DefaultAzureCredential(new DefaultAzureCredentialOptions { TenantId = config["AZURE_TENANT_ID"] });
 
-        services.AddSingleton<ChatCompletionService>();
+        services.AddScoped<ChatCompletionService>();
 
         services.AddSingleton(services =>
         {
@@ -57,25 +61,20 @@ internal static class ChatAppExtensions
 
         services.AddSingleton<IKernelMemory>(services =>
         {
-            var config = services.GetRequiredService<IConfiguration>();
-
-            KernelMemoryConfig memoryConfiguration = new();
-            AzureOpenAIConfig azureOpenAITextConfig = new();
-            AzureOpenAIConfig azureOpenAIEmbeddingConfig = new();
-            SearchClientConfig searchClientConfig = new();
-            AzureAISearchConfig azureAISearchConfig = new();
-
-            config.BindSection("KernelMemory", memoryConfiguration);
-            config.BindSection("KernelMemory:Services:AzureOpenAIText", azureOpenAITextConfig);
-            config.BindSection("KernelMemory:Services:AzureOpenAIEmbedding", azureOpenAIEmbeddingConfig);
-            //config.BindSection("KernelMemory:Services:AzureAIDocIntel", azDocIntelConfig);
-            config.BindSection("KernelMemory:Services:AzureAISearch", azureAISearchConfig);
-            //config.BindSection("KernelMemory:Services:AzureBlobs", azureBlobConfig);
-            config.BindSection("KernelMemory:Retrieval:SearchClient", searchClientConfig);
+            KernelMemoryConfig memoryConfiguration = services.GetRequiredService<IOptions<KernelMemoryConfig>>().Value ?? 
+                throw new Exception("KernelMemory is required in settings.");
+            AzureOpenAIConfig azureOpenAITextConfig = services.GetRequiredService<IOptionsSnapshot<AzureOpenAIConfig>>().Get("AzureOpenAIText") ?? 
+                throw new Exception("AzureOpenAIText is required in settings.");
+            AzureOpenAIConfig azureOpenAIEmbeddingConfig = services.GetRequiredService<IOptionsSnapshot<AzureOpenAIConfig>>().Get("AzureOpenAIEmbedding") ??
+                throw new Exception("AzureOpenAIEmbedding is required in settings.");
+            SearchClientConfig searchClientConfig = services.GetRequiredService<IOptions<SearchClientConfig>>().Value ??
+                throw new Exception("SearchClientConfig is required in settings.");
+            AzureAISearchConfig azureAISearchConfig = services.GetRequiredService<IOptions<AzureAISearchConfig>>().Value ??
+                throw new Exception("AzureAISearchConfig is required in settings.");
 
             if (!string.IsNullOrEmpty(config["AZURE_TENANT_ID"]))
             {
-                var defaultAzureCreds = new DefaultAzureCredential(new DefaultAzureCredentialOptions { TenantId = config["AZURE_TENANT_ID"] });
+                // only use set credential if overriding the tenantID from settings
                 azureOpenAITextConfig.SetCredential(defaultAzureCreds);
                 azureOpenAIEmbeddingConfig.SetCredential(defaultAzureCreds);
                 azureAISearchConfig.SetCredential(defaultAzureCreds);
