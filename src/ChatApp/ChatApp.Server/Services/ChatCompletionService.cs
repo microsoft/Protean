@@ -65,7 +65,7 @@ public class ChatCompletionService
         _promptDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Plugins");
         //builder.Plugins.AddFromPromptDirectory(_promptDirectory);
 
-        builder.Plugins.AddFromObject(new MemoryPlugin(kernelMemory, waitForIngestionToComplete: true));
+        builder.Plugins.AddFromObject(new MemoryPlugin(kernelMemory, waitForIngestionToComplete: true), "memory");
 
         _kernel = builder.Build();
     }
@@ -85,11 +85,17 @@ public class ChatCompletionService
 
     public async Task<ChatCompletion> CompleteChat(Message[] messages)
     {
-        var sysmessage = $$$"""
-                You are a helpful agent answering questions based on long term memory and plugins available to you.
-                Do not use general information. 
-                Respond with 'I don't know that' if you have no results.
-                """;
+        //var sysmessage = $$$"""
+        //        You are a helpful agent answering questions based on long term memory and plugins available to you.
+        //        Do not use general information. 
+        //        Respond with 'I don't know that' if you have no results.
+        //        """;
+
+        var sysmessage = """
+                       Question: {{$input}}
+                       Tool call result: {{memory.ask $input}}
+                       If the answer is empty say "I don't know", otherwise reply with a preview of the answer, truncated to 15 words.
+                       """;
         var history = new ChatHistory(sysmessage);
 
         //filter out 'tool' messages and add rest to history
