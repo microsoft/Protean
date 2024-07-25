@@ -1,6 +1,5 @@
 ﻿using Azure;
 using Azure.Identity;
-using Azure.Search.Documents;
 using ChatApp.Server.Models;
 using ChatApp.Server.Services;
 using Microsoft.Azure.Cosmos;
@@ -34,27 +33,7 @@ internal static class ChatAppExtensions
         var defaultAzureCreds = string.IsNullOrEmpty(config["AZURE_TENANT_ID"]) ? new DefaultAzureCredential()
             : new DefaultAzureCredential(new DefaultAzureCredentialOptions { TenantId = config["AZURE_TENANT_ID"] });
 
-        services.AddScoped<ChatCompletionService>();
-
-        services.AddSingleton(services =>
-        {
-            var options = services.GetRequiredService<IOptions<AISearchOptions>>().Value ?? throw new Exception($"{nameof(AISearchOptions)} is required in settings.");
-
-            if (string.IsNullOrWhiteSpace(options?.ApiKey))
-            {
-                var adOptions = services.GetRequiredService<IOptions<AzureAdOptions>>().Value;                
-
-                return new SearchClient(
-                        new Uri(options!.Endpoint),
-                        options.IndexName,
-                        defaultAzureCreds);
-            }
-
-            return new SearchClient(
-                    new Uri(options.Endpoint),
-                    options.IndexName,
-                    new AzureKeyCredential(options.ApiKey));
-        });
+        services.AddScoped<ChatCompletionService>();        
 
         services.AddSingleton<IKernelMemory>(services =>
         {            

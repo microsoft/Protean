@@ -85,22 +85,10 @@ public class ChatCompletionService
 
     public async Task<ChatCompletion> CompleteChat(Message[] messages)
     {
-        //var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        //string documentContents = string.Empty;
-        //if (messages.Any(m => m.Role.Equals(AuthorRole.Tool.ToString(), StringComparison.OrdinalIgnoreCase)))
-        //{
-        //    // parse out the document contents
-        //    var toolContent = JsonSerializer.Deserialize<ToolContentResponse>(
-        //        messages.First(m => m.Role.Equals(AuthorRole.Tool.ToString(), StringComparison.OrdinalIgnoreCase)).Content, options);
-        //    documentContents = string.Join("\r", toolContent.Citations.Select(c => $"{c.Title}:{c.Content}:{c.AdditionalContent}"));
-        //}
-        //else
-        //{
-        //    documentContents = "no source available.";
-        //}
-
         var sysmessage = $$$"""
-                You are an a helpful agent answering questions based on information available to you, general information and functions.
+                You are a helpful agent answering questions based on long term memory and plugins available to you.
+                Do not use general information. 
+                Respond with 'I don't know that' if you have no results.
                 """;
         var history = new ChatHistory(sysmessage);
 
@@ -108,7 +96,7 @@ public class ChatCompletionService
         messages.Where(m => !m.Role.Equals(AuthorRole.Tool.ToString(), StringComparison.OrdinalIgnoreCase))
             .ToList()
             .ForEach(m => history.AddUserMessage(m.Content));
-
+        
         var response = await _kernel.GetRequiredService<IChatCompletionService>().GetChatMessageContentAsync(history, _promptSettings, _kernel);
         // add assistant response message to history and return chatcompletion
 

@@ -23,7 +23,6 @@ public static partial class Endpoints
         app.MapPost("/history/update", UpdateHistoryAsync);
         app.MapGet("/history/list", ListHistoryAsync);
         app.MapPost("/history/read", ReadHistoryAsync);
-        // Not implemented
         app.MapPost("/history/generate", GenerateHistoryAsync);
 
         return app;
@@ -33,67 +32,68 @@ public static partial class Endpoints
         HttpContext context,
         [FromBody] ConversationRequest conversation,
         [FromServices] CosmosConversationService history,
-        [FromServices] ChatCompletionService chat,
-        [FromServices] AzureSearchService search)
+        [FromServices] ChatCompletionService chat)
     {
-        var user = GetUser(context);
-        string conversationId = conversation.Id;
+        //var user = GetUser(context);
+        //string conversationId = conversation.Id;
 
-        if (user == null)
-            return Results.Unauthorized();
+        //if (user == null)
+        //    return Results.Unauthorized();
 
-        if (conversation == null)
-            return Results.BadRequest();
+        //if (conversation == null)
+        //    return Results.BadRequest();
 
-        // --- See if this is an existing conversation, otherwise create a new one ---
-        var historyMetadata = new Dictionary<string, string>();
-        // if conversationId is empty that means it is a new conversation
-        if (string.IsNullOrWhiteSpace(conversationId))
-        {
-            var title = await chat.GenerateTitleAsync(conversation.Messages);
+        //// --- See if this is an existing conversation, otherwise create a new one ---
+        //var historyMetadata = new Dictionary<string, string>();
+        //// if conversationId is empty that means it is a new conversation
+        //if (string.IsNullOrWhiteSpace(conversationId))
+        //{
+        //    var title = await chat.GenerateTitleAsync(conversation.Messages);
 
-            // should we persist user message here too?
-            var result = await history.CreateConversationAsync(user.UserPrincipalId, title);
-            conversationId = result.Id;
+        //    // should we persist user message here too?
+        //    var result = await history.CreateConversationAsync(user.UserPrincipalId, title);
+        //    conversationId = result.Id;
 
-            historyMetadata.Add("title", result.Title);
-            historyMetadata.Add("date", result.CreatedAt.ToString());
-        }
-        historyMetadata.Add("conversation_id", conversationId);
+        //    historyMetadata.Add("title", result.Title);
+        //    historyMetadata.Add("date", result.CreatedAt.ToString());
+        //}
+        //historyMetadata.Add("conversation_id", conversationId);
 
-        // Format the incoming message object in the "chat/completions" messages format
-        // then write it to the conversation history in cosmos
-        var userMessage = conversation.Messages.LastOrDefault(m => m.Role.Equals(AuthorRole.User.ToString(), StringComparison.OrdinalIgnoreCase));
-        if (userMessage == null)
-            return Results.BadRequest("No user messages found");
+        //// Format the incoming message object in the "chat/completions" messages format
+        //// then write it to the conversation history in cosmos
+        //var userMessage = conversation.Messages.LastOrDefault(m => m.Role.Equals(AuthorRole.User.ToString(), StringComparison.OrdinalIgnoreCase));
+        //if (userMessage == null)
+        //    return Results.BadRequest("No user messages found");
 
-        _ = await history.CreateMessageAsync(userMessage.Id, conversationId, user.UserPrincipalId, userMessage);
+        //_ = await history.CreateMessageAsync(userMessage.Id, conversationId, user.UserPrincipalId, userMessage);
 
-        // --- Do the RAG search ---
-        // filter out any existing tool messages (search results)
-        conversation.Messages = conversation.Messages.Where(m => !m.Role.Equals(AuthorRole.Tool.ToString(), StringComparison.OrdinalIgnoreCase)).ToList();
-        // do the search here
-        var searchResults = await search.QueryDocumentsAsync(userMessage.Content);
-        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        var toolMsg = new Message
-        {
-            Id = Guid.NewGuid().ToString(),
-            Role = AuthorRole.Tool.ToString().ToLower(),
-            Date = DateTime.UtcNow,
-            Content = JsonSerializer.Serialize<ToolContentResponse>(searchResults, options)
-        };
-        // add search results to the conversation
-        conversation.Messages.Add(toolMsg);
+        //// --- Do the RAG search ---
+        //// filter out any existing tool messages (search results)
+        //conversation.Messages = conversation.Messages.Where(m => !m.Role.Equals(AuthorRole.Tool.ToString(), StringComparison.OrdinalIgnoreCase)).ToList();
+        //// do the search here
+        //var searchResults = await search.QueryDocumentsAsync(userMessage.Content);
+        //var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        //var toolMsg = new Message
+        //{
+        //    Id = Guid.NewGuid().ToString(),
+        //    Role = AuthorRole.Tool.ToString().ToLower(),
+        //    Date = DateTime.UtcNow,
+        //    Content = JsonSerializer.Serialize<ToolContentResponse>(searchResults, options)
+        //};
+        //// add search results to the conversation
+        //conversation.Messages.Add(toolMsg);
 
-        // --- Do the chat completion ---
+        //// --- Do the chat completion ---
 
-        var completionResult = await chat.CompleteChat([.. conversation.Messages]);
-        completionResult.HistoryMetadata = historyMetadata;
+        //var completionResult = await chat.CompleteChat([.. conversation.Messages]);
+        //completionResult.HistoryMetadata = historyMetadata;
 
-        //    except Exception as e:
-        //        logging.exception("Exception in /history/generate")
-        //        return jsonify({ "error": str(e)}), 500
-        return Results.Ok(completionResult);
+        ////    except Exception as e:
+        ////        logging.exception("Exception in /history/generate")
+        ////        return jsonify({ "error": str(e)}), 500
+        //return Results.Ok(completionResult);
+        await Task.Delay(0);
+        throw new NotImplementedException();
     }
 
     private static async Task<IResult> GetEnsureHistoryAsync(HttpContext httpContext, [FromServices] CosmosConversationService history)
