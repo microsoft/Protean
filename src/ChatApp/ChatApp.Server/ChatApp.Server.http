@@ -1,0 +1,35 @@
+@ChatApp.Server_HostAddress = https://localhost:7159
+POST https://localhost:7159/conversation
+Content-Type: application/json
+{
+  "messages": [
+    {
+      "id": "12345",
+      "role": "user",
+      "content": "",
+      "date": "2024-07-15T19:13:12.943Z"
+    }
+  ]
+}
+
+###
+
+POST https://localhost:7159/search?query="ucard%20replace%20process"
+Content-Type: application/json
+
+###
+
+POST https://localhost:7159/agentchat?prompt="validate%20member%20card%20number%20abcd1234"
+Content-Type: application/json
+
+###
+
+POST https://localhost:7159/history/message_feedback
+Content-Type: application/json
+
+{
+  "id": "chatcmpl-9jUvXWjzfu2H69YziSEUZuItIwgd0",
+  "feedback": "missing_citation"
+}
+
+###
