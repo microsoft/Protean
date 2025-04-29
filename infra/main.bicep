@@ -7,7 +7,7 @@ param environmentName string
 
 @minLength(1)
 @description('Primary location for all resources')
-@allowed(['eastus','westus2'])
+@allowed(['eastus','eastus2','westus2'])
 param location string
 
 param appServicePlanName string = ''
@@ -33,10 +33,10 @@ param chatDeploymentName string = 'chat'
 
 @description('Name of the chat completion model')
 param chatModelName string = 'gpt-4o'
-param chatModelVersion string = '2024-05-13'
+param chatModelVersion string = '2024-11-20'
 
 param embeddingDeploymentName string = 'embedding'
-param embeddingModelName string = 'text-embedding-ada-002'
+param embeddingModelName string = 'text-embedding-3-small'
 param embeddingModelVersion string = '2'
 
 @description('Name of the storage account')
