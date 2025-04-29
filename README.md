@@ -139,6 +139,12 @@ As many cloud resources are required to run the client app and minimal API even 
 1. Build and run the IndexOrchestration project
 1. Upload or overwrite a knowledge file in the `docs` container of the storage account to trigger the function.
 
+# There was an error exporting the HTTPS developer certificate to a file
+
+If you see this error when trying to build or deploy the application, follow the guidance at this link [https://learn.microsoft.com/en-us/dotnet/core/compatibility/aspnet-core/9.0/certificate-export](https://learn.microsoft.com/en-us/dotnet/core/compatibility/aspnet-core/9.0/certificate-export).
+
+1. Open your file explorer and create the 'https' directory under the following path: `C:\Users\<username>\AppData\Roaming\ASP.NET\`
+
 # Considerations
 UNDER CONSTRUCTION
 
